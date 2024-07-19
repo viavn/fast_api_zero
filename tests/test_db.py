@@ -1,10 +1,8 @@
-import pytest
 from sqlalchemy import select
 
 from src.models import User
 
 
-@pytest.mark.vini
 def test_create_user(session):
     # Arrange
     user = User(username='viavn', email='vi@email.com', password='password')
