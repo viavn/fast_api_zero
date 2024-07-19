@@ -98,11 +98,12 @@ def test_get_user_by_id_deve_retornar_usuario(client, user):
 
 
 def test_update_user_deve_atualizar_usuario_e_retornar_dado_atualizado(
-    client, user
+    client, user, token
 ):
     # Act
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername2',
             'password': '123',
@@ -115,14 +116,17 @@ def test_update_user_deve_atualizar_usuario_e_retornar_dado_atualizado(
     assert response.json() == {
         'username': 'testusername2',
         'email': 'test@test.com',
-        'id': 1,
+        'id': user.id,
     }
 
 
-def test_update_user_deve_retornar_404_se_usuario_nao_encontrado(client, user):
+def test_update_user_deve_retornar_403_ao_atualizar_outro_usuario(
+    client, user, token
+):
     # Act
     response = client.put(
-        '/users/999',
+        f'/users/{user.id + 1}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername2',
             'password': '123',
@@ -131,22 +135,74 @@ def test_update_user_deve_retornar_404_se_usuario_nao_encontrado(client, user):
     )
 
     # Assert
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
 
 
-def test_delete_user_deve_retornar_404_se_usuario_nao_encontrado(client, user):
+def test_delete_user_deve_retornar_204_ao_excluir_usuario(client, user, token):
     # Act
-    response = client.delete('/users/999')
-
-    # Assert
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
-def test_delete_user_deve_retornar_204_ao_excluir_usuario(client, user):
-    # Act
-    response = client.delete('/users/1')
+    response = client.delete(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
     # Assert
     assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_delete_user_deve_retornar_403_ao_remover_outro_usuario(
+    client, user, token
+):
+    # Act
+    response = client.delete(
+        f'/users/{user.id + 1}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    # Assert
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
+def test_login_deve_retornar_token(client, user):
+    # Act
+    response = client.post(
+        '/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    token = response.json()
+
+    # Assert
+    assert response.status_code == status.HTTP_200_OK
+    assert token['token_type'] == 'Bearer'
+    assert 'access_token' in token
+
+
+def test_login_deve_retornar_400_se_usuario_nao_for_encontrado(client):
+    # Act
+    response = client.post(
+        '/token',
+        data={
+            'username': 'bad_username@email.com',
+            'password': '123',
+        },
+    )
+
+    # Assert
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {'detail': 'Incorrect email or password'}
+
+
+def test_login_deve_retornar_400_se_senha_for_invalida(client, user):
+    # Act
+    response = client.post(
+        '/token',
+        data={
+            'username': user.email,
+            'password': 'xpto',
+        },
+    )
+
+    # Assert
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {'detail': 'Incorrect email or password'}
