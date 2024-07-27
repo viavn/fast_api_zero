@@ -121,11 +121,11 @@ def test_update_user_deve_atualizar_usuario_e_retornar_dado_atualizado(
 
 
 def test_update_user_deve_retornar_403_ao_atualizar_outro_usuario(
-    client, user, token
+    client, other_user, token
 ):
     # Act
     response = client.put(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername2',
@@ -151,11 +151,11 @@ def test_delete_user_deve_retornar_204_ao_excluir_usuario(client, user, token):
 
 
 def test_delete_user_deve_retornar_403_ao_remover_outro_usuario(
-    client, user, token
+    client, other_user, token
 ):
     # Act
     response = client.delete(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
