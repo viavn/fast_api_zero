@@ -1,7 +1,7 @@
 from fastapi import status
 from jwt import decode
 
-from src.security import ALGORITHM, SECRET_KEY, create_access_token
+from src.security import create_access_token, settings
 
 
 def test_create_access_token_deve_criar_token():
@@ -12,7 +12,9 @@ def test_create_access_token_deve_criar_token():
     token = create_access_token(data)
 
     # Assert
-    decoded = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    decoded = decode(
+        token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+    )
 
     assert decoded['sub'] == data['sub']
     assert decoded['exp']  # Testa se o valor de exp foi adicionado ao token
